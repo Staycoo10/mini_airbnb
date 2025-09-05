@@ -1,0 +1,19 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Hugging Face cache
+.cache/
+huggingface/
+*.model
+*.bin
+*.safetensors
+
+# Environment files
+.env
+
+# OS-specific
+.DS_Store
+Thumbs.db
