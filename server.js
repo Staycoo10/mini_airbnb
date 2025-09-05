@@ -1,10 +1,15 @@
 const express = require("express");
-const pool = require("./db"); // import database connection
+const pool = require("./db");
 
 const app = express();
 app.use(express.json());
 
-// Test route
+//  Home route
+app.get("/", (req, res) => {
+  res.send("Mini-Airbnb backend is running!");
+});
+
+//  Test database connection
 app.get("/db-test", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
