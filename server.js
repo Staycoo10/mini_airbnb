@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("./db");
 const session = require("express-session");
+const bcrypt = require("bcrypt");
 
 const app = express();
 app.use(express.json());
@@ -17,20 +18,30 @@ app.use(
 app.post("/register", async (req, res) => {
   const { name, email, idnp, password, role } = req.body;
 
-  // hashing
-  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    // 1) Hashing
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  // save to DB
-  const newUser = await pool.query(
-    "INSERT INTO users (name, email, idnp, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role",
-    [name, email, idnp, hashedPassword, role || "user"]
-  );
+    // 2) Insert user
+    const newUser = await pool.query(
+      "INSERT INTO users (name, email, idnp, password, role) VALUES ($1, $2, $3, $4, COALESCE($5, 'user')) RETURNING id, name, email, role",
+      [name, email, idnp, hashedPassword, role]
+    );
 
-  // save user ID into session
-  req.session.userId = newUser.rows[0].id;
+    // 3) Save user id in session
+    req.session.userId = newUser.rows[0].id;
 
-  res.json({ message: "User registered and logged in!", user: newUser.rows[0] });
+    // 4) Send response
+    res.json({
+      message: "User registered and logged in!",
+      user: newUser.rows[0],
+    });
+  } catch (err) {
+    console.error("Register error:", err.message);
+    res.status(500).send("Error registering user");
+  }
 });
+
 
 
 //  Home route
