@@ -1,5 +1,15 @@
 const express = require("express");
 const pool = require("./db");
+const session = require("express-session");
+
+app.use(
+  session({
+    secret: "airbnbkey", // for signing the session ID cookie
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false } // true only if using HTTPS
+  })
+);
 
 const app = express();
 app.use(express.json());
@@ -19,6 +29,7 @@ app.get("/db-test", async (req, res) => {
     res.status(500).send("Database connection error");
   }
 });
+
 
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");
