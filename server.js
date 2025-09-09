@@ -2,6 +2,9 @@ const express = require("express");
 const pool = require("./db");
 const session = require("express-session");
 
+const app = express();
+app.use(express.json());
+
 app.use(
   session({
     secret: "airbnbkey", // for signing the session ID cookie
@@ -29,8 +32,6 @@ app.post("/register", async (req, res) => {
   res.json({ message: "User registered and logged in!", user: newUser.rows[0] });
 });
 
-const app = express();
-app.use(express.json());
 
 //  Home route
 app.get("/", (req, res) => {
