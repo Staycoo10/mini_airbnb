@@ -2,7 +2,7 @@ const express = require("express");
 const pool = require("./db");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
