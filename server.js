@@ -2,13 +2,14 @@ const express = require("express");
 const pool = require("./db");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
+require("dotenv").config({ path: "./.env" });
 
 const app = express();
 app.use(express.json());
 
 app.use(
   session({
-    secret: "airbnbkey", // for signing the session ID cookie
+    secret: process.env.SESSION_SECRET, // for signing the session ID cookie
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false } // true only if using HTTPS
