@@ -76,16 +76,6 @@ app.get("/", (req, res) => {
   res.send("Mini-Airbnb backend is running!");
 });
 
-//  Test database connection
-app.get("/db-test", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json({ database_time: result.rows[0] });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Database connection error");
-  }
-});
 
 
 app.listen(3000, () => {
