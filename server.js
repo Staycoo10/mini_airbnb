@@ -25,6 +25,11 @@ app.post("/register", async (req, res) => {
     if (emailParts.length !== 2 || !allowedDomains.includes(emailParts[1])) {
       return res.status(400).json({ error: "Email must be from an allowed domain (e.g., gmail.com)" });
     }
+       if (idnp.length !== 13 || isNaN(idnp)) {
+      return res.status(400).json({
+        error: "IDNP must contain exactly 13 numeric digits",
+      });
+    }
     // 1) Hashing
     const hashedPassword = await bcrypt.hash(password, 10);
 
