@@ -20,6 +20,11 @@ app.post("/register", async (req, res) => {
   const { name, email, idnp, password, role } = req.body;
 
   try {
+    const allowedDomains = ["gmail.com", "mail.com", "yahoo.com", "icloud.com"]; 
+    const emailParts = email.split("@");
+    if (emailParts.length !== 2 || !allowedDomains.includes(emailParts[1])) {
+      return res.status(400).json({ error: "Email must be from an allowed domain (e.g., gmail.com)" });
+    }
     // 1) Hashing
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -69,7 +74,8 @@ app.post("/login", async (req, res) => {
     req.session.userId = user.id;
 
     res.json({ message: "Logged in successfully!", user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-  } catch (err) {
+  } 
+  catch (err) {
     console.error(err.message);
     res.status(500).json({ error: "Server error" });
   }
