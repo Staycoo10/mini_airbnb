@@ -20,6 +20,7 @@ app.post("/register", async (req, res) => {
   const { name, email, idnp, password, role } = req.body;
 
   try {
+    // Basic validation
     const allowedDomains = ["gmail.com", "mail.com", "yahoo.com", "icloud.com"]; 
     const emailParts = email.split("@");
     if (emailParts.length !== 2 || !allowedDomains.includes(emailParts[1])) {
