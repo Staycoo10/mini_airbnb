@@ -9,7 +9,7 @@ app.use(express.json());
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET, // for signing the session ID cookie
+    secret: process.env.SESSION_SECRET, 
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false } // true only if using HTTPS
@@ -40,9 +40,35 @@ app.post("/register", async (req, res) => {
   } catch (err) {
     console.error("Register error:", err.message);
     res.status(500).send("Error registering user");
-  }
+  } 
 });
 
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // 1. Find user
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+    const user = userResult.rows[0];
+
+    // 2. Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    // 3. Save user in session
+    req.session.userId = user.id;
+
+    res.json({ message: "Logged in successfully!", user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 //  Home route
