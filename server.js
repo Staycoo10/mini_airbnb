@@ -37,9 +37,14 @@ app.post("/register", async (req, res) => {
       message: "User registered and logged in!",
       user: newUser.rows[0],
     });
-  } catch (err) {
+  } 
+  catch (err) {
     console.error("Register error:", err.message);
-    res.status(500).send("Error registering user");
+    
+      if (err.code === "23505") { 
+  return res.status(400).json({ error: "Email already in use" });
+}
+res.status(500).send("Error registering user");
   } 
 });
 
