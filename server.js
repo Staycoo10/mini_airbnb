@@ -95,6 +95,23 @@ app.post("/logout", (req, res) => {
   });
 });
 
+function isAuthenticated(req, res, next) {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "You must be logged in" });
+  }
+  next(); 
+}
+
+// Protected route
+app.get("/me", isAuthenticated, async (req, res) => {
+  const user = await pool.query(
+    "SELECT id, name, email, role FROM users WHERE id = $1",
+    [req.session.userId]
+  );
+
+  res.json({ user: user.rows[0] });
+});
+
 //  Home route
 app.get("/", (req, res) => {
   res.send("Mini-Airbnb backend is running!");
