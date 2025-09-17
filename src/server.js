@@ -1,5 +1,5 @@
 const express = require("express");
-const pool = require("./db");
+const pool = require("./config/db");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
