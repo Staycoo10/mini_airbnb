@@ -3,6 +3,7 @@ const session = require("express-session");
 require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
+const apartamentRoutes = require("./routes/apartments");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/apartments", apartamentRoutes);
 
 // Home route
 app.get("/", (req, res) => {
