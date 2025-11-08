@@ -114,33 +114,33 @@ const exportApartments = async (req, res) => {
 
     // Apply filters from query params
     if (req.query.location) {
-      query += ` AND a.location ILIKE ${paramCounter}`;
-      queryParams.push(`%${req.query.location}%`);
-      paramCounter++;
+    query += ` AND a.location ILIKE $${paramCounter}`;
+    queryParams.push(`%${req.query.location}%`);
+    paramCounter++;
     }
 
     if (req.query.min_price) {
-      query += ` AND a.price >= ${paramCounter}`;
-      queryParams.push(parseFloat(req.query.min_price));
-      paramCounter++;
+    query += ` AND a.price >= $${paramCounter}`;
+    queryParams.push(parseFloat(req.query.min_price));
+    paramCounter++;
     }
 
     if (req.query.max_price) {
-      query += ` AND a.price <= ${paramCounter}`;
-      queryParams.push(parseFloat(req.query.max_price));
-      paramCounter++;
+    query += ` AND a.price <= $${paramCounter}`;
+    queryParams.push(parseFloat(req.query.max_price));
+    paramCounter++;
     }
 
     if (req.query.is_available !== undefined) {
-      query += ` AND a.is_available = ${paramCounter}`;
-      queryParams.push(req.query.is_available === 'true');
-      paramCounter++;
+    query += ` AND a.is_available = $${paramCounter}`;
+    queryParams.push(req.query.is_available === 'true');
+    paramCounter++;
     }
 
     if (req.query.owner_id) {
-      query += ` AND a.owner_id = ${paramCounter}`;
-      queryParams.push(parseInt(req.query.owner_id));
-      paramCounter++;
+    query += ` AND a.owner_id = $${paramCounter}`;
+    queryParams.push(parseInt(req.query.owner_id));
+    paramCounter++;
     }
 
     query += ` ORDER BY a.id DESC`;
