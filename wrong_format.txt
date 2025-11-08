@@ -1,0 +1,6 @@
+title,description,price,location
+Valid Apartment 1,Nice place in center,300.00,Chisinau
+Invalid Price,Apartment with negative price,-50.00,Balti
+Valid Apartment 2,Good location near metro,400.50,Chisinau
+Missing Description,,350.00,Orhei
+Valid Apartment 3,Spacious apartment,500.00,Balti

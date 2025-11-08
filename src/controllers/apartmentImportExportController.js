@@ -5,11 +5,18 @@ const { validateApartmentData } = require("../utils/apartmentValidation");
 
 const importApartments = async (req, res) => {
   try {
+    // Get owner_id from session (logged in user)
+    const ownerId = req.session.userId;
+    
+    if (!ownerId) {
+      return res.status(401).json({ error: "You must be logged in to import apartments" });
+    }
+
     const csvContent = req.file.buffer.toString('utf-8');
     const { headers, rows } = parseCSV(csvContent);
 
-    // Expected columns
-    const expectedColumns = ['title', 'description', 'price', 'location', 'owner_id'];
+    // Expected columns (without owner_id - it comes from session)
+    const expectedColumns = ['title', 'description', 'price', 'location'];
     
     // Validate headers
     const missingColumns = expectedColumns.filter(col => !headers.includes(col));
@@ -50,33 +57,17 @@ const importApartments = async (req, res) => {
         continue;
       }
 
-      // Check if user exists
-      const userExists = await pool.query(
-        "SELECT id FROM users WHERE id = $1",
-        [row.data.user_id]
-      );
-
-      if (userExists.rows.length === 0) {
-        results.failed++;
-        results.errors.push({
-          row: row.rowNumber,
-          errors: [`User with ID ${row.data.user_id} does not exist`]
-        });
-        continue;
-      }
-
-      // Insert apartment
+      // Insert apartment with owner_id from session
       try {
         await pool.query(
-          `INSERT INTO apartments (title, description, price, location, rooms, user_id) 
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+          `INSERT INTO apartments (title, description, price, location, owner_id) 
+           VALUES ($1, $2, $3, $4, $5)`,
           [
             row.data.title,
             row.data.description,
             parseFloat(row.data.price),
             row.data.location,
-            parseInt(row.data.rooms),
-            parseInt(row.data.user_id)
+            ownerId  // Use logged in user's ID
           ]
         );
         results.imported++;
@@ -110,12 +101,11 @@ const exportApartments = async (req, res) => {
         a.description, 
         a.price, 
         a.location, 
-        a.rooms, 
-        a.user_id,
-        u.name as owner_name,
-        a.created_at
+        a.is_available,
+        a.owner_id,
+        u.name as owner_name
       FROM apartments a
-      LEFT JOIN users u ON a.user_id = u.id
+      LEFT JOIN users u ON a.owner_id = u.id
       WHERE 1=1
     `;
     
@@ -124,36 +114,36 @@ const exportApartments = async (req, res) => {
 
     // Apply filters from query params
     if (req.query.location) {
-      query += ` AND a.location ILIKE $${paramCounter}`;
+      query += ` AND a.location ILIKE ${paramCounter}`;
       queryParams.push(`%${req.query.location}%`);
       paramCounter++;
     }
 
     if (req.query.min_price) {
-      query += ` AND a.price >= $${paramCounter}`;
+      query += ` AND a.price >= ${paramCounter}`;
       queryParams.push(parseFloat(req.query.min_price));
       paramCounter++;
     }
 
     if (req.query.max_price) {
-      query += ` AND a.price <= $${paramCounter}`;
+      query += ` AND a.price <= ${paramCounter}`;
       queryParams.push(parseFloat(req.query.max_price));
       paramCounter++;
     }
 
-    if (req.query.rooms) {
-      query += ` AND a.rooms = $${paramCounter}`;
-      queryParams.push(parseInt(req.query.rooms));
+    if (req.query.is_available !== undefined) {
+      query += ` AND a.is_available = ${paramCounter}`;
+      queryParams.push(req.query.is_available === 'true');
       paramCounter++;
     }
 
-    if (req.query.user_id) {
-      query += ` AND a.user_id = $${paramCounter}`;
-      queryParams.push(parseInt(req.query.user_id));
+    if (req.query.owner_id) {
+      query += ` AND a.owner_id = ${paramCounter}`;
+      queryParams.push(parseInt(req.query.owner_id));
       paramCounter++;
     }
 
-    query += ` ORDER BY a.created_at DESC`;
+    query += ` ORDER BY a.id DESC`;
 
     // Execute query
     const result = await pool.query(query, queryParams);
@@ -163,7 +153,7 @@ const exportApartments = async (req, res) => {
     }
 
     // Fields to export (excluding sensitive data)
-    const fields = ['id', 'title', 'description', 'price', 'location', 'rooms', 'user_id', 'owner_name', 'created_at'];
+    const fields = ['id', 'title', 'description', 'price', 'location', 'is_available', 'owner_id', 'owner_name'];
     
     const csv = generateCSV(result.rows, fields);
 
