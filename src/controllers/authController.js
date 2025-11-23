@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
-const { validateEmail, validateIDNP } = require("../utils/validation");
+const { validateEmail, validateIDNP } = require("../utils/loginValidation");
 
 const register = async (req, res) => {
   const { name, email, idnp, password, role } = req.body;
