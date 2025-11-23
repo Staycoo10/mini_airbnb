@@ -2,18 +2,27 @@ const express = require("express");
 const router = express.Router();
 const {
   createReservation,
-  getMyReservations,
+  getUserReservations,
+  getReservationById,
   cancelReservation,
   getAllReservations
 } = require("../controllers/reservationController");
-const { isAuthenticated, isAdmin } = require("../middleware/auth");
+const { isAuthenticated } = require("../middleware/auth");
 
-// user routes
-router.post("/", isAuthenticated, createReservation);
-router.get("/my", isAuthenticated, getMyReservations);
-router.delete("/:id", isAuthenticated, cancelReservation);
 
-// admin route
-router.get("/all", isAuthenticated, isAdmin, getAllReservations);
+router.use(isAuthenticated);
+
+// Crează rezervare nouă
+router.post("/", createReservation);
+
+router.get("/my-reservations", getUserReservations);
+
+router.get("/all", getAllReservations);
+
+// Obține o rezervare specifică
+router.get("/:id", getReservationById);
+
+// Anulează o rezervare
+router.delete("/:id", cancelReservation);
 
 module.exports = router;
