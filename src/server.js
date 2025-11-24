@@ -1,23 +1,14 @@
 const express = require("express");
-const session = require("express-session");
 require("dotenv").config();
 
 const authRoutes = require("./routes/auth");
 const apartamentRoutes = require("./routes/apartments");
 const reservationRoutes = require("./routes/reservations");
-
+const configureMiddleware = require("./config/middleware");
 const app = express();
 
 // Middleware
-app.use(express.json());
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET, 
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false } // true only if using HTTPS
-  })
-);
+configureMiddleware(app);
 
 // Routes
 app.use("/api/auth", authRoutes);
