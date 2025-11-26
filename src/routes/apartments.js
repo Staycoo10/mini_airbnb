@@ -14,16 +14,17 @@ const {
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+router.post("/import", isAuthenticated,isAdmin,
+  upload.single('file'),
+  validateCSVFile,
+  importApartments
+);
+router.get("/export",isAuthenticated,isAdmin, exportApartments);
 
 router.get("/", getApartments);
 router.get("/:id", getApartmentById);
 router.post("/", isAuthenticated, isAdmin, createApartment);
 router.put("/:id", isAuthenticated, isAdmin, updateApartment);
 router.delete("/:id", isAuthenticated, isAdmin, deleteApartment);
-router.post("/import", isAuthenticated,
-  upload.single('file'),
-  validateCSVFile,
-  importApartments
-);
-router.get("/export",isAuthenticated,exportApartments);
+
 module.exports = router;
