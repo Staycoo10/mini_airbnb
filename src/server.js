@@ -1,3 +1,4 @@
+const cors = require("cors");
 const express = require("express");
 require("dotenv").config();
 
@@ -6,7 +7,7 @@ const apartamentRoutes = require("./routes/apartments");
 const reservationRoutes = require("./routes/reservations");
 const configureMiddleware = require("./config/middleware");
 const app = express();
-
+app.use(cors());
 // Middleware
 configureMiddleware(app);
 
