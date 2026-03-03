@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
-const { validateEmail, validateIDNP } = require("../utils/loginValidation");
+const { validateEmail, validateIDNP, validatePassword } = require("../utils/loginValidation");
 
 const register = async (req, res) => {
   const { name, email, idnp, password, role } = req.body;
@@ -16,7 +16,10 @@ const register = async (req, res) => {
     if (!idnpValidation.isValid) {
       return res.status(400).json({ error: idnpValidation.error });
     }
-    
+      const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ error: passwordValidation.error });
+    }
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
