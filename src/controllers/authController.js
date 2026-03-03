@@ -30,16 +30,23 @@ const register = async (req, res) => {
     req.session.userId = newUser.rows[0].id;
     
     // Send response
-    res.json({
-      message: "User registered and logged in!",
-      user: newUser.rows[0],
-    });
-  } catch (err) {
+} catch (err) {
     console.error("Register error:", err.message);
     
-    if (err.code === "23505") { 
-      return res.status(400).json({ error: "Email already in use" });
+    // Verificare erori de duplicate (23505 = unique violation)
+    if (err.code === "23505") {
+      // Verifică care constraint a fost violat
+      if (err.constraint === 'users_email_key') {
+        return res.status(400).json({ error: "Email already in use" });
+      }
+      if (err.constraint === 'users_idnp_key') {
+        return res.status(400).json({ error: "IDNP already registered" });
+      }
+      // Fallback pentru alte duplicate constraints
+      return res.status(400).json({ error: "This account already exists" });
     }
+    
+    // Alte erori
     res.status(500).json({ error: "Error registering user" });
   } 
 };
