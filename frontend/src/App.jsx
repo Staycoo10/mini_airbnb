@@ -9,6 +9,7 @@ import ApartmentList from './Components/apartments/ApartmentList';
 import CreateApartmentForm from './Components/apartments/CreateApartmentForm';
 import ReservationList from './Components/reservations/ReservationList';
 import ReservationModal from './Components/reservations/ReservationModal';
+import Cabinet from './Components/cabinet/Cabinet';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -300,9 +301,9 @@ export default function App() {
 
             <ApartmentList
               apartments={apartments}
-              isAdmin={user.role === 'admin'}
+              isAdmin={false}
               onReserve={handleOpenReservationModal}
-              onDelete={handleDeleteApartment}
+              onDelete={null}
             />
           </div>
         )}
@@ -322,6 +323,18 @@ export default function App() {
               onCancel={handleCancelReservation}
               onGoToApartments={() => setPage('apartments')}
             />
+          </div>
+        )}
+
+        {page === 'cabinet' && (
+          <div className="page-fade-in">
+            <div className="mb-8">
+              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Personal Cabinet
+              </h1>
+              <p className="text-gray-400 text-sm mt-1">Manage your account and listings</p>
+            </div>
+            <Cabinet user={user} onShowMessage={showMessage} />
           </div>
         )}
       </main>
