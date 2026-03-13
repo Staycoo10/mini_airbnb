@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from './services/api';
 import Header from './Components/layout/Header';
 import Footer from './Components/layout/Footer';
@@ -8,6 +8,7 @@ import RegisterForm from './Components/auth/RegisterForm';
 import ApartmentList from './Components/apartments/ApartmentList';
 import CreateApartmentForm from './Components/apartments/CreateApartmentForm';
 import ReservationList from './Components/reservations/ReservationList';
+import ReservationModal from './Components/reservations/ReservationModal';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -17,14 +18,16 @@ export default function App() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  // FIX: modal in loc de prompt()
+  const [reservationModal, setReservationModal] = useState(null); // { id, title, price }
 
-  // Check auth on mount
-  useEffect(() => {
-    checkAuth();
+  const showMessage = useCallback((text, type = 'success') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   }, []);
-  useEffect(() => { checkAuth(); }, []);
 
-  const checkAuth = async () => {
+  // FIX: un singur useEffect, nu duplicat
+  const checkAuth = useCallback(async () => {
     try {
       const data = await api.call('/auth/me');
       setUser(data.user);
@@ -34,32 +37,31 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const showMessage = (text, type = 'success') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 4000);
-  };
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // AUTH
   const handleLogin = async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  try {
-    const data = await api.call('/auth/login', {  // ← IMPORTANT: /auth/login
-      method: 'POST',
-      body: JSON.stringify({ 
-        email: form.email.value, 
-        password: form.password.value 
-      })
-    });
-    setUser(data.user);
-    setPage('apartments');
-    showMessage('Welcome back! 🎉');
-  } catch (err) {
-    showMessage(err.message, 'error');
-  }
-};
+    e.preventDefault();
+    const form = e.target;
+    try {
+      const data = await api.call('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: form.email.value,
+          password: form.password.value
+        })
+      });
+      setUser(data.user);
+      setPage('apartments');
+      showMessage('Welcome back! 🎉');
+    } catch (err) {
+      showMessage(err.message, 'error');
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -86,23 +88,24 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await api.call('/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    } finally {
       setUser(null);
       setPage('login');
       showMessage('Logged out successfully');
-    } catch (err) {
-      showMessage('Logout failed', 'error');
     }
   };
 
   // APARTMENTS
-  const loadApartments = async () => {
+  const loadApartments = useCallback(async () => {
     try {
       const data = await api.call('/apartments');
       setApartments(data);
-    } catch (err) {
+    } catch {
       showMessage('Failed to load apartments', 'error');
     }
-  };
+  }, [showMessage]);
 
   const handleCreateApartment = async (e) => {
     e.preventDefault();
@@ -138,26 +141,29 @@ export default function App() {
   };
 
   // RESERVATIONS
-  const loadMyReservations = async () => {
+  const loadMyReservations = useCallback(async () => {
     try {
       const data = await api.call('/reservations/my-reservations');
       setReservations(data.reservations);
-    } catch (err) {
+    } catch {
       showMessage('Failed to load reservations', 'error');
     }
+  }, [showMessage]);
+
+  // FIX: modal in loc de prompt()
+  const handleOpenReservationModal = (apartmentId, apartmentTitle, price) => {
+    setReservationModal({ id: apartmentId, title: apartmentTitle, price });
   };
 
-  const handleCreateReservation = async (apartmentId, apartmentTitle) => {
-    const startDate = prompt('Check-in date (YYYY-MM-DD):');
-    const endDate = prompt('Check-out date (YYYY-MM-DD):');
-    if (!startDate || !endDate) return;
-
+  const handleConfirmReservation = async (apartmentId, apartmentTitle, startDate, endDate) => {
     try {
       const data = await api.call('/reservations', {
         method: 'POST',
         body: JSON.stringify({ apartment_id: apartmentId, start_date: startDate, end_date: endDate })
       });
       showMessage(`Reserved "${apartmentTitle}" for $${data.totalPrice}! 🎉`);
+      setReservationModal(null);
+      loadApartments();
     } catch (err) {
       showMessage(err.message, 'error');
     }
@@ -177,30 +183,78 @@ export default function App() {
   useEffect(() => {
     if (page === 'apartments') loadApartments();
     if (page === 'reservations') loadMyReservations();
-  }, [page]);
+  }, [page, loadApartments, loadMyReservations]);
 
+  // LOADING
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl text-gray-600">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-2 border-[#FF385C] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-400 font-medium">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
-  // LOGIN/REGISTER
+  // AUTH PAGES
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center p-5">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-12">
-          <div className="text-center mb-8">
-            <div className="text-5xl mb-2">🏠</div>
-            <h1 className="text-3xl font-bold text-gray-900">Mini-Airbnb</h1>
-            <p className="text-gray-600 mt-2">Find your perfect stay</p>
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #FF385C 0%, #BD1E59 50%, #6B2D5E 100%)' }}>
+        <div className="w-full max-w-5xl flex rounded-3xl overflow-hidden shadow-2xl" style={{ minHeight: '580px' }}>
+
+          {/* Left decorative panel */}
+          <div className="hidden lg:flex flex-1 flex-col justify-between p-12 text-white" style={{ background: 'rgba(0,0,0,0.15)' }}>
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 32 32" className="w-7 h-7 fill-current">
+                <path d="M16 1C10.477 1 6 5.477 6 11c0 7.5 10 20 10 20S26 18.5 26 11c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
+              </svg>
+              <span className="font-bold text-white text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                miniairbnb
+              </span>
+            </div>
+
+            <div>
+              <div className="text-6xl mb-6">🏠</div>
+              <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Find your<br />perfect stay
+              </h1>
+              <p className="text-white/70 text-base leading-relaxed">
+                Discover unique homes and experiences across Moldova and beyond.
+              </p>
+            </div>
+
+            <p className="text-white/40 text-sm">© 2026 Mini-Airbnb</p>
           </div>
 
-          <Message text={message.text} type={message.type} />
+          {/* Right form panel */}
+          <div className="w-full lg:w-[440px] flex-shrink-0 bg-white flex flex-col justify-center p-10">
+            <div className="mb-6">
+              {/* Mobile logo */}
+              <div className="flex items-center gap-2 mb-6 lg:hidden">
+                <svg viewBox="0 0 32 32" className="w-6 h-6 text-[#FF385C] fill-current">
+                  <path d="M16 1C10.477 1 6 5.477 6 11c0 7.5 10 20 10 20S26 18.5 26 11c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
+                </svg>
+                <span className="font-bold text-gray-900 text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>miniairbnb</span>
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                {page === 'login' ? 'Welcome back' : 'Create your account'}
+              </h2>
+              <p className="text-gray-400 text-sm mt-1">
+                {page === 'login' ? 'Sign in to continue' : 'Join thousands of travelers'}
+              </p>
+            </div>
 
-          {page === 'login' ? (
-            <LoginForm onSubmit={handleLogin} onSwitchToRegister={() => setPage('register')} />
-          ) : (
-            <RegisterForm onSubmit={handleRegister} onSwitchToLogin={() => setPage('login')} />
-          )}
+            <Message text={message.text} type={message.type} />
+
+            <div className="mt-4">
+              {page === 'login' ? (
+                <LoginForm onSubmit={handleLogin} onSwitchToRegister={() => setPage('register')} />
+              ) : (
+                <RegisterForm onSubmit={handleRegister} onSwitchToLogin={() => setPage('login')} />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -208,56 +262,80 @@ export default function App() {
 
   // MAIN APP
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FAFAF8]">
       <Header user={user} currentPage={page} onPageChange={setPage} onLogout={handleLogout} />
+
       <Message text={message.text} type={message.type} />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {page === 'apartments' && (
-          <>
+          <div className="page-fade-in">
             <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
-                {apartments.length} stays available
-              </h1>
+              <div>
+                <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  {apartments.length} stays available
+                </h1>
+                <p className="text-gray-400 text-sm mt-1">Find your perfect place to stay</p>
+              </div>
               {user.role === 'admin' && (
                 <button
                   onClick={() => setShowCreateForm(!showCreateForm)}
-                  className="px-6 py-3 bg-gray-900 text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
+                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    showCreateForm
+                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-900 text-white hover:bg-gray-700 shadow-sm'
+                  }`}
                 >
-                  {showCreateForm ? '✕ Cancel' : '+ Add new stay'}
+                  {showCreateForm ? '✕ Cancel' : '+ Add listing'}
                 </button>
               )}
             </div>
 
             {showCreateForm && (
-              <CreateApartmentForm 
-                onSubmit={handleCreateApartment} 
-                onCancel={() => setShowCreateForm(false)} 
+              <CreateApartmentForm
+                onSubmit={handleCreateApartment}
+                onCancel={() => setShowCreateForm(false)}
               />
             )}
 
             <ApartmentList
               apartments={apartments}
               isAdmin={user.role === 'admin'}
-              onReserve={handleCreateReservation}
+              onReserve={handleOpenReservationModal}
               onDelete={handleDeleteApartment}
             />
-          </>
+          </div>
         )}
 
         {page === 'reservations' && (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Your trips</h1>
+          <div className="page-fade-in">
+            <div className="mb-8">
+              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                Your trips
+              </h1>
+              <p className="text-gray-400 text-sm mt-1">
+                {reservations.length} reservation{reservations.length !== 1 ? 's' : ''}
+              </p>
+            </div>
             <ReservationList
               reservations={reservations}
               onCancel={handleCancelReservation}
               onGoToApartments={() => setPage('apartments')}
             />
-          </>
+          </div>
         )}
       </main>
 
       <Footer />
+
+      {/* Reservation Modal */}
+      {reservationModal && (
+        <ReservationModal
+          apartment={reservationModal}
+          onConfirm={handleConfirmReservation}
+          onClose={() => setReservationModal(null)}
+        />
+      )}
     </div>
   );
 }

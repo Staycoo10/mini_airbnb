@@ -1,38 +1,74 @@
-
 import React from 'react';
 
-export default function CreateApartmentForm({ onSubmit, onCancel }) {
+export default function ReservationCard({ reservation, onCancel }) {
+  const start = new Date(reservation.start_date);
+  const end = new Date(reservation.end_date);
+  const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+  const formatDate = (date) =>
+    date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const isUpcoming = start > new Date();
+  const isPast = end < new Date();
+
+  const statusConfig = {
+    upcoming: { label: 'Upcoming', classes: 'bg-blue-50 text-blue-700 border-blue-100' },
+    past: { label: 'Completed', classes: 'bg-gray-50 text-gray-500 border-gray-100' },
+    active: { label: 'Active now', classes: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  };
+
+  const status = isUpcoming ? 'upcoming' : isPast ? 'past' : 'active';
+  const { label, classes } = statusConfig[status];
+
   return (
-    <div className="bg-white rounded-2xl p-8 mb-8 shadow-md border border-gray-200">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900">List your space</h2>
-      <form onSubmit={onSubmit} className="space-y-5">
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-900">Title</label>
-          <input name="title" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900" placeholder="Cozy apartment in the city center" />
-        </div>
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-900">Description</label>
-          <textarea name="description" required rows="4" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900 resize-y" placeholder="Describe your place..."></textarea>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-900">Price per night</label>
-            <input name="price" type="number" step="0.01" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900" placeholder="50.00" />
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex" style={{ boxShadow: 'var(--card-shadow)' }}>
+      {/* Color strip */}
+      <div
+        className="w-2 flex-shrink-0"
+        style={{
+          background: isUpcoming ? '#3B82F6' : isPast ? '#D1D5DB' : '#10B981'
+        }}
+      />
+
+      <div className="flex-1 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {/* Title & status */}
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h3 className="text-base font-semibold text-gray-900 truncate" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                {reservation.apartment_title || reservation.title || 'Apartment'}
+              </h3>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${classes}`}>
+                {label}
+              </span>
+            </div>
+
+            {/* Dates */}
+            <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+              <span>{formatDate(start)}</span>
+              <span className="text-gray-300">→</span>
+              <span>{formatDate(end)}</span>
+              <span className="text-gray-400">·</span>
+              <span>{nights} night{nights !== 1 ? 's' : ''}</span>
+            </div>
+
+            {/* Price */}
+            <div className="text-sm font-semibold text-gray-900">
+              Total: ${parseFloat(reservation.total_price || 0).toFixed(2)}
+            </div>
           </div>
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-900">Location</label>
-            <input name="location" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900" placeholder="Chisinau" />
-          </div>
+
+          {/* Cancel button - only for upcoming */}
+          {isUpcoming && (
+            <button
+              onClick={() => onCancel(reservation.id)}
+              className="flex-shrink-0 px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-all"
+            >
+              Cancel
+            </button>
+          )}
         </div>
-        <div className="flex gap-3 pt-2">
-          <button type="submit" className="flex-1 py-3.5 bg-gradient-to-r from-airbnb-primary to-airbnb-dark text-white rounded-lg font-semibold hover:shadow-lg transition-shadow">
-            Publish listing
-          </button>
-          <button type="button" onClick={onCancel} className="px-6 py-3.5 border border-gray-300 rounded-lg font-semibold text-gray-900 hover:bg-gray-50 transition-colors">
-            Cancel
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
