@@ -1,4 +1,4 @@
-# 🏠 Mini-Airbnb Backend API
+# 🏠 Mini-Airbnb Backend API (+frontend🛠️)
 
 REST API pentru o platformă de rezervare apartamente, construită cu **Node.js**, **Express** și **PostgreSQL**.
 
