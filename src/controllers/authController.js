@@ -33,7 +33,16 @@ const register = async (req, res) => {
     req.session.userId = newUser.rows[0].id;
     
     // Send response
-} catch (err) {
+    res.status(201).json({
+      message: "Account created successfully!",
+      user: {
+        id: newUser.rows[0].id,
+        name: newUser.rows[0].name,
+        email: newUser.rows[0].email,
+        role: newUser.rows[0].role
+      }
+    });
+  } catch (err) {
     console.error("Register error:", err.message);
     
     // Verificare erori de duplicate (23505 = unique violation)
