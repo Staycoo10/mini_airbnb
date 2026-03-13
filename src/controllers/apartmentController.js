@@ -32,7 +32,7 @@ const createApartment = async (req, res) => {
     const { title, description, location, price } = req.body;
     // is_available default true — frontul nu trimite acest camp
     const is_available = req.body.is_available !== undefined ? req.body.is_available : true;
-    const owner_id = parseInt(req.session.userId, 10);
+    const owner_id = req.session.userId;
     const result = await pool.query(
       `INSERT INTO apartments (title, description, location, price, is_available, owner_id)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
@@ -50,7 +50,7 @@ const updateApartment = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, location, price, is_available } = req.body;
-    const owner_id = parseInt(req.session.userId, 10);
+    const owner_id = req.session.userId;
     const result = await pool.query(
       `UPDATE apartments
        SET title=$1, description=$2, location=$3, price=$4, is_available=$5
@@ -71,7 +71,7 @@ const updateApartment = async (req, res) => {
 const deleteApartment = async (req, res) => {
   try {
     const { id } = req.params;
-    const owner_id = parseInt(req.session.userId, 10);
+    const owner_id = req.session.userId;
     const result = await pool.query(
       "DELETE FROM apartments WHERE id=$1 AND owner_id=$2 RETURNING *",
       [id, owner_id]
@@ -89,9 +89,11 @@ const deleteApartment = async (req, res) => {
 // Get apartments owned by current user
 const getMyApartments = async (req, res) => {
   try {
-    const owner_id = parseInt(req.session.userId, 10);
+    const owner_id = req.session.userId;
 
-    if (!owner_id || isNaN(owner_id)) {
+    console.log('[getMyApartments] session userId:', owner_id, '| type:', typeof owner_id);
+
+    if (!owner_id) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
@@ -99,9 +101,10 @@ const getMyApartments = async (req, res) => {
       "SELECT * FROM apartments WHERE owner_id=$1 ORDER BY id DESC",
       [owner_id]
     );
+    console.log('[getMyApartments] found rows:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
-    console.error("getMyApartments error:", error.message);
+    console.error("getMyApartments FULL error:", error);
     res.status(500).json({ error: "Database error: " + error.message });
   }
 };

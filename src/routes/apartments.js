@@ -10,6 +10,7 @@ const {
   createApartment,
   updateApartment,
   deleteApartment,
+  getMyApartments,
 } = require("../controllers/apartmentController");
 
 const storage = multer.memoryStorage();
@@ -21,6 +22,7 @@ router.post("/import", isAuthenticated,isAdmin,
 );
 router.get("/export",isAuthenticated,isAdmin, exportApartments);
 
+router.get("/my-apartments", isAuthenticated, isAdmin, getMyApartments);
 router.get("/", getApartments);
 router.get("/:id", getApartmentById);
 router.post("/", isAuthenticated, isAdmin, createApartment);
