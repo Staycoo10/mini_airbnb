@@ -139,7 +139,7 @@ const exportApartments = async (req, res) => {
 
     if (req.query.owner_id) {
     query += ` AND a.owner_id = $${paramCounter}`;
-    queryParams.push(parseInt(req.query.owner_id));
+    queryParams.push(req.query.owner_id);
     paramCounter++;
     }
 
