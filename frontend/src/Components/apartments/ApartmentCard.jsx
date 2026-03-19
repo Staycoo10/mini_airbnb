@@ -1,74 +1,84 @@
-
 import React from 'react';
 
+const GRADIENTS = [
+  ['#FF385C', '#E31C5F'],
+  ['#7B61FF', '#5B3FE0'],
+  ['#00A699', '#007A70'],
+  ['#FC642D', '#E0531F'],
+  ['#1B4965', '#2D6E9E'],
+];
+
+const EMOJIS = ['🏠', '🏡', '🏢', '🛖', '🏘️'];
+
 export default function ApartmentCard({ apartment, isAdmin, onReserve, onDelete }) {
-  const gradients = [
-    'from-purple-400 to-pink-600',
-    'from-pink-400 to-red-500',
-    'from-blue-400 to-cyan-500',
-    'from-green-400 to-teal-500',
-    'from-yellow-400 to-orange-500'
-  ];
-  
-  const gradient = gradients[apartment.id % 5];
+  const [g1, g2] = GRADIENTS[apartment.id % 5];
+  const emoji = EMOJIS[apartment.id % 5];
+  const [imgError, setImgError] = React.useState(false);
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer">
-      {/* Image placeholder */}
-      <div className={`h-56 bg-gradient-to-br ${gradient} flex items-center justify-center text-6xl`}>
-        🏠
-      </div>
-      
-      {/* Content */}
-      <div className="p-5">
-        {/* Title and availability */}
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 leading-tight line-clamp-2">
-            {apartment.title}
-          </h3>
-          <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${
-            apartment.is_available 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-red-100 text-red-700'
-          }`}>
-            {apartment.is_available ? 'Available' : 'Booked'}
-          </span>
+    <div className="apt-card bg-white rounded-2xl overflow-hidden border border-gray-100" style={{ boxShadow: 'var(--card-shadow)' }}>
+      {/* Image area */}
+      <div className="relative h-52 overflow-hidden">
+        {apartment.image_url && !imgError ? (
+          <img
+            src={apartment.image_url}
+            alt={apartment.title}
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-5xl select-none"
+            style={{ background: `linear-gradient(135deg, ${g1}, ${g2})` }}
+          >
+            {emoji}
+          </div>
+        )}
+        {/* Status badge */}
+        <div className={`absolute top-3 right-3 px-2.5 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm ${
+          apartment.is_available
+            ? 'bg-white/80 text-emerald-700'
+            : 'bg-black/40 text-white'
+        }`}>
+          {apartment.is_available ? '● Available' : '○ Booked'}
         </div>
-        
-        {/* Description */}
-        <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 mb-3">
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <h3 className="text-base font-semibold text-gray-900 leading-tight line-clamp-1 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          {apartment.title}
+        </h3>
+        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+          <span>📍</span> {apartment.location}
+        </p>
+        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-3">
           {apartment.description}
         </p>
-        
-        {/* Location */}
-        <div className="text-sm text-gray-600 mb-3">
-          📍 {apartment.location}
-        </div>
-        
-        {/* Price */}
-        <div className="text-xl font-bold text-gray-900 mb-4">
-          ${apartment.price}{' '}
-          <span className="text-sm font-normal text-gray-600">night</span>
-        </div>
-        
-        {/* Actions */}
-        <div className="flex gap-2 pt-4 border-t border-gray-200">
-          {apartment.is_available && (
-            <button
-              onClick={() => onReserve(apartment.id, apartment.title)}
-              className="flex-1 py-2.5 bg-airbnb-primary text-white rounded-lg text-sm font-semibold hover:bg-airbnb-dark transition-colors"
-            >
-              Reserve
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => onDelete(apartment.id)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              🗑️
-            </button>
-          )}
+
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div>
+            <span className="text-lg font-bold text-gray-900">${apartment.price}</span>
+            <span className="text-sm text-gray-400 ml-1">/ night</span>
+          </div>
+          <div className="flex gap-2">
+            {apartment.is_available && (
+              <button
+                onClick={() => onReserve(apartment.id, apartment.title, apartment.price)}
+                className="px-4 py-2 bg-[#FF385C] text-white rounded-lg text-sm font-semibold hover:bg-[#E31C5F] transition-colors"
+              >
+                Reserve
+              </button>
+            )}
+            {isAdmin && onDelete && (
+              <button
+                onClick={() => onDelete(apartment.id)}
+                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-200 transition-all"
+              >
+                🗑️
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

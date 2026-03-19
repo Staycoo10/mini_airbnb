@@ -118,7 +118,8 @@ export default function App() {
           title: form.title.value,
           description: form.description.value,
           price: parseFloat(form.price.value),
-          location: form.location.value
+          location: form.location.value,
+          image_url: form.image_url.value || null
         })
       });
       showMessage('Apartment created! ✨');
