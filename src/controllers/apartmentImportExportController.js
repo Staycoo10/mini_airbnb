@@ -109,7 +109,13 @@ const exportApartments = async (req, res) => {
         a.location, 
         a.is_available,
         a.owner_id,
-        u.name as owner_name
+        a.image_url,
+        u.name as owner_name,
+        COALESCE(
+          (SELECT string_agg(ai.url, '|' ORDER BY ai.position)
+           FROM apartment_images ai WHERE ai.apartment_id = a.id),
+          ''
+        ) as images
       FROM apartments a
       LEFT JOIN users u ON a.owner_id = u.id
       WHERE 1=1
@@ -159,7 +165,7 @@ const exportApartments = async (req, res) => {
     }
 
     // Fields to export (excluding sensitive data)
-    const fields = ['id', 'title', 'description', 'price', 'location', 'is_available', 'owner_id', 'owner_name', 'image_url'];
+    const fields = ['id', 'title', 'description', 'price', 'location', 'is_available', 'owner_id', 'owner_name', 'image_url', 'images'];
     
     const csv = generateCSV(result.rows, fields);
 
