@@ -60,18 +60,22 @@ const importApartments = async (req, res) => {
       // Insert apartment with owner_id from session
       try {
         const image_url = row.data.image_url || null;
-        await pool.query(
+        const result = await pool.query(
           `INSERT INTO apartments (title, description, price, location, owner_id, image_url) 
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            row.data.title,
-            row.data.description,
-            parseFloat(row.data.price),
-            row.data.location,
-            ownerId,
-            image_url
-          ]
+           VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+          [row.data.title, row.data.description, parseFloat(row.data.price), row.data.location, ownerId, image_url]
         );
+        const aptId = result.rows[0].id;
+        // imagini suplimentare — coloana "images" cu URL-uri separate prin |
+        if (row.data.images) {
+          const extraUrls = row.data.images.split('|').map(u => u.trim()).filter(Boolean);
+          for (let pos = 0; pos < extraUrls.length; pos++) {
+            await pool.query(
+              "INSERT INTO apartment_images (apartment_id, url, position) VALUES ($1, $2, $3)",
+              [aptId, extraUrls[pos], pos]
+            );
+          }
+        }
         results.imported++;
       } catch (err) {
         results.failed++;

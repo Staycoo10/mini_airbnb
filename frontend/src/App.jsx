@@ -11,6 +11,7 @@ import ReservationList from './Components/reservations/ReservationList';
 import ReservationModal from './Components/reservations/ReservationModal';
 import Cabinet from './Components/cabinet/Cabinet';
 import Pagination from './Components/common/Pagination';
+import ApartmentDetail from './Components/apartments/ApartmentDetail';
 
 const APARTMENTS_PER_PAGE = 24;
 const RESERVATIONS_PER_PAGE = 9;
@@ -26,6 +27,7 @@ export default function App() {
   const [reservationModal, setReservationModal] = useState(null);
   const [aptPage, setAptPage] = useState(1);
   const [resPage, setResPage] = useState(1);
+  const [selectedApartment, setSelectedApartment] = useState(null);
 
   const showMessage = useCallback((text, type = 'success') => {
     setMessage({ text, type });
@@ -117,17 +119,28 @@ export default function App() {
   const handleCreateApartment = async (e) => {
     e.preventDefault();
     const form = e.target;
+    const imageUrls = e.target._imageUrls || [];
     try {
-      await api.call('/apartments', {
+      const apt = await api.call('/apartments', {
         method: 'POST',
         body: JSON.stringify({
           title: form.title.value,
           description: form.description.value,
           price: parseFloat(form.price.value),
           location: form.location.value,
-          image_url: form.image_url.value || null
+          image_url: imageUrls[0] || null   // prima imagine merge in coloana image_url
         })
       });
+      // imaginile suplimentare (2,3,...) merg in tabela apartment_images
+      const extraImages = imageUrls.slice(1);
+      for (const url of extraImages) {
+        try {
+          await api.call(`/apartments/${apt.id}/images`, {
+            method: 'POST',
+            body: JSON.stringify({ url })
+          });
+        } catch {}
+      }
       showMessage('Apartment created! ✨');
       form.reset();
       setShowCreateForm(false);
@@ -278,7 +291,20 @@ export default function App() {
       <Message text={message.text} type={message.type} />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {page === 'apartments' && (
+        {/* Detalii apartament */}
+        {selectedApartment && (
+          <ApartmentDetail
+            apartment={selectedApartment}
+            user={user}
+            onBack={() => setSelectedApartment(null)}
+            onReserve={(id, title, price) => {
+              setSelectedApartment(null);
+              handleOpenReservationModal(id, title, price);
+            }}
+          />
+        )}
+
+        {!selectedApartment && page === 'apartments' && (
           <div className="page-fade-in">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -313,6 +339,7 @@ export default function App() {
               isAdmin={false}
               onReserve={handleOpenReservationModal}
               onDelete={null}
+              onSelect={(apt) => setSelectedApartment(apt)}
             />
             <Pagination
               currentPage={aptPage}
@@ -321,8 +348,7 @@ export default function App() {
             />
           </div>
         )}
-
-        {page === 'reservations' && (
+        {!selectedApartment && page === 'reservations' && (
           <div className="page-fade-in">
             <div className="mb-8">
               <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
@@ -345,7 +371,7 @@ export default function App() {
           </div>
         )}
 
-        {page === 'cabinet' && (
+        {!selectedApartment && page === 'cabinet' && (
           <div className="page-fade-in">
             <div className="mb-8">
               <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>

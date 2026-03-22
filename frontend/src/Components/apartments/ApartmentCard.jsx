@@ -10,7 +10,7 @@ const GRADIENTS = [
 
 const EMOJIS = ['🏠', '🏡', '🏢', '🛖', '🏘️'];
 
-export default function ApartmentCard({ apartment, isAdmin, onReserve, onDelete }) {
+export default function ApartmentCard({ apartment, isAdmin, onReserve, onDelete, onClick }) {
   const [g1, g2] = GRADIENTS[apartment.id % 5];
   const emoji = EMOJIS[apartment.id % 5];
   const [imgError, setImgError] = React.useState(false);
@@ -18,7 +18,7 @@ export default function ApartmentCard({ apartment, isAdmin, onReserve, onDelete 
   return (
     <div className="apt-card bg-white rounded-2xl overflow-hidden border border-gray-100" style={{ boxShadow: 'var(--card-shadow)' }}>
       {/* Image area */}
-      <div className="relative h-52 overflow-hidden">
+      <div className="relative h-52 overflow-hidden cursor-pointer" onClick={onClick}>
         {apartment.image_url && !imgError ? (
           <img
             src={apartment.image_url}
