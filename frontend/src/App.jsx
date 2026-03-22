@@ -176,7 +176,8 @@ export default function App() {
     try {
       await api.call(`/reservations/${id}`, { method: 'DELETE' });
       showMessage('Reservation cancelled');
-      loadMyReservations();
+      // actualizam status-ul din DB direct in state
+      setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
     } catch (err) {
       showMessage(err.message, 'error');
     }
