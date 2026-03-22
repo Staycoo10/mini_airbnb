@@ -59,15 +59,17 @@ const importApartments = async (req, res) => {
 
       // Insert apartment with owner_id from session
       try {
+        const image_url = row.data.image_url || null;
         await pool.query(
-          `INSERT INTO apartments (title, description, price, location, owner_id) 
-           VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO apartments (title, description, price, location, owner_id, image_url) 
+           VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             row.data.title,
             row.data.description,
             parseFloat(row.data.price),
             row.data.location,
-            ownerId  // Use logged in user's ID
+            ownerId,
+            image_url
           ]
         );
         results.imported++;
@@ -153,7 +155,7 @@ const exportApartments = async (req, res) => {
     }
 
     // Fields to export (excluding sensitive data)
-    const fields = ['id', 'title', 'description', 'price', 'location', 'is_available', 'owner_id', 'owner_name'];
+    const fields = ['id', 'title', 'description', 'price', 'location', 'is_available', 'owner_id', 'owner_name', 'image_url'];
     
     const csv = generateCSV(result.rows, fields);
 

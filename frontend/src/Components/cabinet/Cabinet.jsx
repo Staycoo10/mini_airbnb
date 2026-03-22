@@ -154,6 +154,7 @@ export default function Cabinet({ user, onShowMessage }) {
 
       {user.role === 'admin' && (
         <>
+          
           {/* ── My Listings ── */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -229,18 +230,8 @@ export default function Cabinet({ user, onShowMessage }) {
               </div>
             )}
           </div>
-        </>
-      )}
- {/* ── Import / Export card ── */}
-      {user.role !== 'admin' && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center" style={{ boxShadow: 'var(--card-shadow)' }}>
-          <div className="text-5xl mb-3">🌍</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
-            Ready to explore?
-          </h3>
-          <p className="text-gray-400 text-sm">Browse available stays and book your next trip.</p>
-        </div>
-      )} <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6" style={{ boxShadow: 'var(--card-shadow)' }}>
+          {/* ── Import / Export card ── */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6" style={{ boxShadow: 'var(--card-shadow)' }}>
             <h2 className="text-lg font-semibold text-gray-900 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
               Import & Export
             </h2>
@@ -301,7 +292,7 @@ export default function Cabinet({ user, onShowMessage }) {
                 </button>
                 {/* Format hint */}
                 <p className="text-xs text-gray-400 mt-2 text-center">
-                  Columns: <code className="bg-gray-200 px-1 rounded">title, description, price, location</code>
+                  Required: <code className="bg-gray-200 px-1 rounded">title, description, price, location, image_url</code>  
                 </p>
               </div>
             </div>
@@ -329,6 +320,18 @@ export default function Cabinet({ user, onShowMessage }) {
               </div>
             )}
           </div>
+        </>
+      )}
+
+      {user.role !== 'admin' && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center" style={{ boxShadow: 'var(--card-shadow)' }}>
+          <div className="text-5xl mb-3">🌍</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
+            Ready to explore?
+          </h3>
+          <p className="text-gray-400 text-sm">Browse available stays and book your next trip.</p>
+        </div>
+      )}
     </div>
   );
 }
