@@ -10,6 +10,10 @@ import CreateApartmentForm from './Components/apartments/CreateApartmentForm';
 import ReservationList from './Components/reservations/ReservationList';
 import ReservationModal from './Components/reservations/ReservationModal';
 import Cabinet from './Components/cabinet/Cabinet';
+import Pagination from './Components/common/Pagination';
+
+const APARTMENTS_PER_PAGE = 24;
+const RESERVATIONS_PER_PAGE = 9;
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -19,8 +23,9 @@ export default function App() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  // FIX: modal in loc de prompt()
-  const [reservationModal, setReservationModal] = useState(null); // { id, title, price }
+  const [reservationModal, setReservationModal] = useState(null);
+  const [aptPage, setAptPage] = useState(1);
+  const [resPage, setResPage] = useState(1);
 
   const showMessage = useCallback((text, type = 'success') => {
     setMessage({ text, type });
@@ -103,6 +108,7 @@ export default function App() {
     try {
       const data = await api.call('/apartments');
       setApartments(data);
+      setAptPage(1);
     } catch {
       showMessage('Failed to load apartments', 'error');
     }
@@ -147,6 +153,7 @@ export default function App() {
     try {
       const data = await api.call('/reservations/my-reservations');
       setReservations(data.reservations);
+      setResPage(1);
     } catch {
       showMessage('Failed to load reservations', 'error');
     }
@@ -302,10 +309,15 @@ export default function App() {
             )}
 
             <ApartmentList
-              apartments={apartments}
+              apartments={apartments.slice((aptPage - 1) * APARTMENTS_PER_PAGE, aptPage * APARTMENTS_PER_PAGE)}
               isAdmin={false}
               onReserve={handleOpenReservationModal}
               onDelete={null}
+            />
+            <Pagination
+              currentPage={aptPage}
+              totalPages={Math.ceil(apartments.length / APARTMENTS_PER_PAGE)}
+              onPageChange={(p) => { setAptPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
@@ -321,9 +333,14 @@ export default function App() {
               </p>
             </div>
             <ReservationList
-              reservations={reservations}
+              reservations={reservations.slice((resPage - 1) * RESERVATIONS_PER_PAGE, resPage * RESERVATIONS_PER_PAGE)}
               onCancel={handleCancelReservation}
               onGoToApartments={() => setPage('apartments')}
+            />
+            <Pagination
+              currentPage={resPage}
+              totalPages={Math.ceil(reservations.length / RESERVATIONS_PER_PAGE)}
+              onPageChange={(p) => { setResPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
