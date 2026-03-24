@@ -9,7 +9,8 @@ const GRADIENTS = [
   ['#1B4965', '#2D6E9E'],
 ];
 
-export default function ApartmentDetail({ apartment, user, onBack, onReserve }) {
+export default function ApartmentDetail({ apartment: initialApartment, user, onBack, onReserve }) {
+  const [apartment, setApartment] = useState(initialApartment);
   const [images, setImages] = useState([]);
   const [lightbox, setLightbox] = useState(null); // index
   const [newUrl, setNewUrl] = useState('');
@@ -27,6 +28,10 @@ export default function ApartmentDetail({ apartment, user, onBack, onReserve }) 
   }, [apartment.id]);
 
   useEffect(() => {
+    // fetch detalii complete cu owner_name
+    api.call(`/apartments/${apartment.id}`)
+      .then(data => setApartment(data))
+      .catch(() => {});
     loadImages();
   }, [loadImages]);
 
@@ -124,43 +129,8 @@ export default function ApartmentDetail({ apartment, user, onBack, onReserve }) 
                       i === 0 ? 'ring-2 ring-gray-900' : 'opacity-70 hover:opacity-100'
                     }`}
                   />
-                  {isOwner && img.id !== 'main' && (
-                    <button
-                      onClick={() => handleDeleteImage(img.id)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs hidden group-hover:flex items-center justify-center leading-none"
-                    >×</button>
-                  )}
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Add image (admin only) */}
-          {isOwner && (
-            <div className="mt-4 bg-gray-50 border border-gray-100 rounded-2xl p-4">
-              <p className="text-sm font-semibold text-gray-700 mb-3">Add photo</p>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={newUrl}
-                  onChange={e => { setNewUrl(e.target.value); setPreviewError(false); }}
-                  placeholder="https://images.unsplash.com/..."
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:bg-white transition-colors"
-                />
-                <button
-                  onClick={handleAddImage}
-                  disabled={!newUrl.trim() || addingUrl}
-                  className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors disabled:opacity-40"
-                >
-                  {addingUrl ? '...' : 'Add'}
-                </button>
-              </div>
-              {newUrl && !previewError && (
-                <img src={newUrl} alt="preview"
-                  className="mt-3 h-24 w-full object-cover rounded-xl"
-                  onError={() => setPreviewError(true)} />
-              )}
-              {previewError && <p className="mt-2 text-xs text-red-500">Invalid image URL</p>}
             </div>
           )}
         </div>
@@ -179,7 +149,15 @@ export default function ApartmentDetail({ apartment, user, onBack, onReserve }) 
             <h1 className="text-2xl font-semibold text-gray-900 mt-3 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
               {apartment.title}
             </h1>
-            <p className="text-sm text-gray-500 mb-4">📍 {apartment.location}</p>
+            <p className="text-sm text-gray-500 mb-1">📍 {apartment.location}</p>
+            {apartment.owner_name && (
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#FF385C] to-[#E31C5F] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {apartment.owner_name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-gray-500">Hosted by <span className="font-medium text-gray-700">{apartment.owner_name}</span></span>
+              </div>
+            )}
             <p className="text-sm text-gray-600 leading-relaxed mb-6">{apartment.description}</p>
 
             <div className="border-t border-gray-100 pt-4 mb-6">
@@ -206,42 +184,57 @@ export default function ApartmentDetail({ apartment, user, onBack, onReserve }) 
       {/* Lightbox */}
       {lightbox !== null && allImages.length > 0 && (
         <div
-          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center modal-backdrop"
+          className="fixed inset-0 z-[9999] h-screen flex flex-col items-center justify-center modal-backdrop"
+          style={{ background: 'rgba(0,0,0,0.95)' }}
           onClick={() => setLightbox(null)}
         >
-          {/* Prev */}
-          {allImages.length > 1 && (
-            <button
-              onClick={e => { e.stopPropagation(); setLightbox((lightbox - 1 + allImages.length) % allImages.length); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-xl transition-all"
-            >←</button>
-          )}
-
-          <img
-            src={allImages[lightbox].url}
-            alt=""
-            className="max-w-[90vw] max-h-[85vh] object-contain rounded-xl"
-            onClick={e => e.stopPropagation()}
-          />
-
-          {/* Next */}
-          {allImages.length > 1 && (
-            <button
-              onClick={e => { e.stopPropagation(); setLightbox((lightbox + 1) % allImages.length); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-xl transition-all"
-            >→</button>
-          )}
-
-          {/* Counter */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/20 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm">
-            {lightbox + 1} / {allImages.length}
-          </div>
-
           {/* Close */}
           <button
             onClick={() => setLightbox(null)}
-            className="absolute top-4 right-4 w-9 h-9 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-lg transition-all"
+            className="absolute top-5 right-5 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-xl transition-all"
           >×</button>
+
+          {/* Counter */}
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-white/20 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm">
+            {lightbox + 1} / {allImages.length}
+          </div>
+
+          {/* Nav + image */}
+          <div className="flex items-center gap-4 w-full h-full px-6 py-20" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setLightbox((lightbox - 1 + allImages.length) % allImages.length)}
+              disabled={allImages.length <= 1}
+              className="flex-shrink-0 w-11 h-11 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-xl transition-all disabled:opacity-0"
+            >←</button>
+
+            <div className="flex-1 h-full flex items-center justify-center">
+              <img
+                src={allImages[lightbox].url}
+                alt=""
+                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px' }}
+              />
+            </div>
+
+            <button
+              onClick={() => setLightbox((lightbox + 1) % allImages.length)}
+              disabled={allImages.length <= 1}
+              className="flex-shrink-0 w-11 h-11 bg-white/20 hover:bg-white/40 text-white rounded-full flex items-center justify-center text-xl transition-all disabled:opacity-0"
+            >→</button>
+          </div>
+
+          {/* Thumbnails */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2" onClick={e => e.stopPropagation()}>
+              {allImages.map((img, i) => (
+                <img key={img.id} src={img.url} alt=""
+                  onClick={() => setLightbox(i)}
+                  className={`w-14 h-10 object-cover rounded-lg cursor-pointer transition-all ${
+                    i === lightbox ? 'ring-2 ring-white opacity-100' : 'opacity-40 hover:opacity-70'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

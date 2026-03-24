@@ -359,7 +359,21 @@ export default function App() {
               </p>
             </div>
             <ReservationList
-              reservations={reservations.slice((resPage - 1) * RESERVATIONS_PER_PAGE, resPage * RESERVATIONS_PER_PAGE)}
+              reservations={[...reservations]
+                .sort((a, b) => {
+                  const priority = (r) => {
+                    if (r.status === 'cancelled') return 3;
+                    const now = new Date();
+                    const start = new Date(r.start_date);
+                    const end = new Date(r.end_date);
+                    if (start <= now && end >= now) return 0; // active
+                    if (start > now) return 1;                // upcoming
+                    return 2;                                 // past
+                  };
+                  return priority(a) - priority(b);
+                })
+                .slice((resPage - 1) * RESERVATIONS_PER_PAGE, resPage * RESERVATIONS_PER_PAGE)
+              }
               onCancel={handleCancelReservation}
               onGoToApartments={() => setPage('apartments')}
             />
