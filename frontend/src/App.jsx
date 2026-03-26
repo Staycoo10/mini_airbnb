@@ -12,6 +12,7 @@ import ReservationModal from './Components/reservations/ReservationModal';
 import Cabinet from './Components/cabinet/Cabinet';
 import Pagination from './Components/common/Pagination';
 import ApartmentDetail from './Components/apartments/ApartmentDetail';
+import ProfilePage from './Components/profile/ProfilePage';
 
 const APARTMENTS_PER_PAGE = 24;
 const RESERVATIONS_PER_PAGE = 9;
@@ -34,7 +35,6 @@ export default function App() {
     setTimeout(() => setMessage({ text: '', type: '' }), 4000);
   }, []);
 
-  // FIX: un singur useEffect, nu duplicat
   const checkAuth = useCallback(async () => {
     try {
       const data = await api.call('/auth/me');
@@ -47,9 +47,7 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  useEffect(() => { checkAuth(); }, [checkAuth]);
 
   // AUTH
   const handleLogin = async (e) => {
@@ -58,17 +56,12 @@ export default function App() {
     try {
       const data = await api.call('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({
-          email: form.email.value,
-          password: form.password.value
-        })
+        body: JSON.stringify({ email: form.email.value, password: form.password.value })
       });
       setUser(data.user);
       setPage('apartments');
       showMessage('Welcome back! 🎉');
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
+    } catch (err) { showMessage(err.message, 'error'); }
   };
 
   const handleRegister = async (e) => {
@@ -78,31 +71,21 @@ export default function App() {
       const data = await api.call('/auth/register', {
         method: 'POST',
         body: JSON.stringify({
-          name: form.name.value,
-          email: form.email.value,
-          idnp: form.idnp.value,
-          password: form.password.value,
-          role: form.role.value
+          name: form.name.value, email: form.email.value,
+          idnp: form.idnp.value, password: form.password.value, role: form.role.value
         })
       });
       setUser(data.user);
       setPage('apartments');
       showMessage('Account created! 🎉');
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
+    } catch (err) { showMessage(err.message, 'error'); }
   };
 
   const handleLogout = async () => {
-    try {
-      await api.call('/auth/logout', { method: 'POST' });
-    } catch {
-      // ignore
-    } finally {
-      setUser(null);
-      setPage('login');
-      showMessage('Logged out successfully');
-    }
+    try { await api.call('/auth/logout', { method: 'POST' }); } catch {}
+    setUser(null);
+    setPage('login');
+    showMessage('Logged out successfully');
   };
 
   // APARTMENTS
@@ -111,9 +94,7 @@ export default function App() {
       const data = await api.call('/apartments');
       setApartments(data);
       setAptPage(1);
-    } catch {
-      showMessage('Failed to load apartments', 'error');
-    }
+    } catch { showMessage('Failed to load apartments', 'error'); }
   }, [showMessage]);
 
   const handleCreateApartment = async (e) => {
@@ -124,41 +105,19 @@ export default function App() {
       const apt = await api.call('/apartments', {
         method: 'POST',
         body: JSON.stringify({
-          title: form.title.value,
-          description: form.description.value,
-          price: parseFloat(form.price.value),
-          location: form.location.value,
-          image_url: imageUrls[0] || null   // prima imagine merge in coloana image_url
+          title: form.title.value, description: form.description.value,
+          price: parseFloat(form.price.value), location: form.location.value,
+          image_url: imageUrls[0] || null
         })
       });
-      // imaginile suplimentare (2,3,...) merg in tabela apartment_images
-      const extraImages = imageUrls.slice(1);
-      for (const url of extraImages) {
-        try {
-          await api.call(`/apartments/${apt.id}/images`, {
-            method: 'POST',
-            body: JSON.stringify({ url })
-          });
-        } catch {}
+      for (const url of imageUrls.slice(1)) {
+        try { await api.call(`/apartments/${apt.id}/images`, { method: 'POST', body: JSON.stringify({ url }) }); } catch {}
       }
       showMessage('Apartment created! ✨');
       form.reset();
       setShowCreateForm(false);
       loadApartments();
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
-  };
-
-  const handleDeleteApartment = async (id) => {
-    if (!window.confirm('Delete this apartment?')) return;
-    try {
-      await api.call(`/apartments/${id}`, { method: 'DELETE' });
-      showMessage('Apartment deleted');
-      loadApartments();
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
+    } catch (err) { showMessage(err.message, 'error'); }
   };
 
   // RESERVATIONS
@@ -167,15 +126,8 @@ export default function App() {
       const data = await api.call('/reservations/my-reservations');
       setReservations(data.reservations);
       setResPage(1);
-    } catch {
-      showMessage('Failed to load reservations', 'error');
-    }
+    } catch { showMessage('Failed to load reservations', 'error'); }
   }, [showMessage]);
-
-  // FIX: modal in loc de prompt()
-  const handleOpenReservationModal = (apartmentId, apartmentTitle, price) => {
-    setReservationModal({ id: apartmentId, title: apartmentTitle, price });
-  };
 
   const handleConfirmReservation = async (apartmentId, apartmentTitle, startDate, endDate) => {
     try {
@@ -186,9 +138,7 @@ export default function App() {
       showMessage(`Reserved "${apartmentTitle}" for $${data.totalPrice}! 🎉`);
       setReservationModal(null);
       loadApartments();
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
+    } catch (err) { showMessage(err.message, 'error'); }
   };
 
   const handleCancelReservation = async (id) => {
@@ -196,11 +146,8 @@ export default function App() {
     try {
       await api.call(`/reservations/${id}`, { method: 'DELETE' });
       showMessage('Reservation cancelled');
-      // actualizam status-ul din DB direct in state
       setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'cancelled' } : r));
-    } catch (err) {
-      showMessage(err.message, 'error');
-    }
+    } catch (err) { showMessage(err.message, 'error'); }
   };
 
   useEffect(() => {
@@ -208,57 +155,42 @@ export default function App() {
     if (page === 'reservations') loadMyReservations();
   }, [page, loadApartments, loadMyReservations]);
 
-  // LOADING
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-[#FF385C] border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-gray-400 font-medium">Loading...</span>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF8]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-2 border-[#FF385C] border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm text-gray-400 font-medium">Loading...</span>
       </div>
-    );
-  }
+    </div>
+  );
 
   // AUTH PAGES
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: 'linear-gradient(135deg, #FF385C 0%, #BD1E59 50%, #6B2D5E 100%)' }}>
-        <div className="w-full max-w-5xl flex rounded-3xl overflow-hidden shadow-2xl" style={{ minHeight: '580px' }}>
+        <div className="w-full max-w-4xl flex rounded-3xl overflow-hidden shadow-2xl" style={{ minHeight: '560px' }}>
 
           {/* Left decorative panel */}
-          <div className="hidden lg:flex flex-1 flex-col justify-between p-12 text-white" style={{ background: 'rgba(0,0,0,0.15)' }}>
-            <div className="flex items-center gap-2">
-              <svg viewBox="0 0 32 32" className="w-7 h-7 fill-current">
-                <path d="M16 1C10.477 1 6 5.477 6 11c0 7.5 10 20 10 20S26 18.5 26 11c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
-              </svg>
-              <span className="font-bold text-white text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                miniairbnb
-              </span>
-            </div>
-
-            <div>
-              <div className="text-6xl mb-6">🏠</div>
-              <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Find your<br />perfect stay
-              </h1>
-              <p className="text-white/70 text-base leading-relaxed">
-                Discover unique homes and experiences across Moldova and beyond.
-              </p>
-            </div>
-
-            <p className="text-white/40 text-sm">© 2026 Mini-Airbnb</p>
+          <div className="hidden lg:flex flex-1 flex-col justify-center p-12 text-white" style={{ background: 'rgba(0,0,0,0.15)' }}>
+            <div className="text-6xl mb-6">🏠</div>
+            <h1 className="text-4xl font-bold mb-4 leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              Find your perfect stay
+            </h1>
+            <p className="text-white/70 text-base leading-relaxed">
+              Discover unique homes and experiences across Moldova and beyond.
+            </p>
           </div>
 
           {/* Right form panel */}
-          <div className="w-full lg:w-[440px] flex-shrink-0 bg-white flex flex-col justify-center p-10">
+          <div className="w-full lg:w-[420px] flex-shrink-0 bg-white flex flex-col justify-center p-10">
             <div className="mb-6">
-              {/* Mobile logo */}
-              <div className="flex items-center gap-2 mb-6 lg:hidden">
-                <svg viewBox="0 0 32 32" className="w-6 h-6 text-[#FF385C] fill-current">
+              <div className="flex items-center gap-2 mb-6">
+                <svg viewBox="0 0 32 32" className="w-7 h-7 text-[#FF385C] fill-current">
                   <path d="M16 1C10.477 1 6 5.477 6 11c0 7.5 10 20 10 20S26 18.5 26 11c0-5.523-4.477-10-10-10zm0 13.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/>
                 </svg>
-                <span className="font-bold text-gray-900 text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>miniairbnb</span>
+                <span className="font-bold text-gray-900 text-lg" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  mini<span className="text-[#FF385C]">airbnb</span>
+                </span>
               </div>
               <h2 className="text-2xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
                 {page === 'login' ? 'Welcome back' : 'Create your account'}
@@ -267,9 +199,7 @@ export default function App() {
                 {page === 'login' ? 'Sign in to continue' : 'Join thousands of travelers'}
               </p>
             </div>
-
             <Message text={message.text} type={message.type} />
-
             <div className="mt-4">
               {page === 'login' ? (
                 <LoginForm onSubmit={handleLogin} onSwitchToRegister={() => setPage('register')} />
@@ -278,6 +208,7 @@ export default function App() {
               )}
             </div>
           </div>
+
         </div>
       </div>
     );
@@ -286,20 +217,20 @@ export default function App() {
   // MAIN APP
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
-      <Header user={user} currentPage={page} onPageChange={setPage} onLogout={handleLogout} />
-
+      <Header user={user} currentPage={page} onPageChange={(p) => { setSelectedApartment(null); setPage(p); }} onLogout={handleLogout} />
       <Message text={message.text} type={message.type} />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+
         {/* Detalii apartament */}
         {selectedApartment && (
           <ApartmentDetail
-            apartment={selectedApartment}
             user={user}
+            apartment={selectedApartment}
             onBack={() => setSelectedApartment(null)}
             onReserve={(id, title, price) => {
               setSelectedApartment(null);
-              handleOpenReservationModal(id, title, price);
+              setReservationModal({ id, title, price });
             }}
           />
         )}
@@ -314,30 +245,21 @@ export default function App() {
                 <p className="text-gray-400 text-sm mt-1">Find your perfect place to stay</p>
               </div>
               {user.role === 'admin' && (
-                <button
-                  onClick={() => setShowCreateForm(!showCreateForm)}
+                <button onClick={() => setShowCreateForm(!showCreateForm)}
                   className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    showCreateForm
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-gray-900 text-white hover:bg-gray-700 shadow-sm'
-                  }`}
-                >
+                    showCreateForm ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-gray-900 text-white hover:bg-gray-700 shadow-sm'
+                  }`}>
                   {showCreateForm ? '✕ Cancel' : '+ Add listing'}
                 </button>
               )}
             </div>
-
             {showCreateForm && (
-              <CreateApartmentForm
-                onSubmit={handleCreateApartment}
-                onCancel={() => setShowCreateForm(false)}
-              />
+              <CreateApartmentForm onSubmit={handleCreateApartment} onCancel={() => setShowCreateForm(false)} />
             )}
-
             <ApartmentList
               apartments={apartments.slice((aptPage - 1) * APARTMENTS_PER_PAGE, aptPage * APARTMENTS_PER_PAGE)}
               isAdmin={false}
-              onReserve={handleOpenReservationModal}
+              onReserve={(id, title, price) => setReservationModal({ id, title, price })}
               onDelete={null}
               onSelect={(apt) => setSelectedApartment(apt)}
             />
@@ -348,15 +270,12 @@ export default function App() {
             />
           </div>
         )}
+
         {!selectedApartment && page === 'reservations' && (
           <div className="page-fade-in">
             <div className="mb-8">
-              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Your trips
-              </h1>
-              <p className="text-gray-400 text-sm mt-1">
-                {reservations.length} reservation{reservations.length !== 1 ? 's' : ''}
-              </p>
+              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>Your trips</h1>
+              <p className="text-gray-400 text-sm mt-1">{reservations.length} reservation{reservations.length !== 1 ? 's' : ''}</p>
             </div>
             <ReservationList
               reservations={[...reservations]
@@ -366,9 +285,9 @@ export default function App() {
                     const now = new Date();
                     const start = new Date(r.start_date);
                     const end = new Date(r.end_date);
-                    if (start <= now && end >= now) return 0; // active
-                    if (start > now) return 1;                // upcoming
-                    return 2;                                 // past
+                    if (start <= now && end >= now) return 0;
+                    if (start > now) return 1;
+                    return 2;
                   };
                   return priority(a) - priority(b);
                 })
@@ -388,19 +307,20 @@ export default function App() {
         {!selectedApartment && page === 'cabinet' && (
           <div className="page-fade-in">
             <div className="mb-8">
-              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                Personal Cabinet
-              </h1>
+              <h1 className="text-3xl font-semibold text-gray-900" style={{ fontFamily: "'DM Serif Display', serif" }}>Personal Cabinet</h1>
               <p className="text-gray-400 text-sm mt-1">Manage your account and listings</p>
             </div>
             <Cabinet user={user} onShowMessage={showMessage} />
           </div>
         )}
+
+        {!selectedApartment && page === 'profile' && (
+          <ProfilePage user={user} onGoBack={() => setPage('apartments')} />
+        )}
       </main>
 
       <Footer />
 
-      {/* Reservation Modal */}
       {reservationModal && (
         <ReservationModal
           apartment={reservationModal}
