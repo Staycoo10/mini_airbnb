@@ -12,7 +12,7 @@ import ReservationModal from './Components/reservations/ReservationModal';
 import Cabinet from './Components/cabinet/Cabinet';
 import Pagination from './Components/common/Pagination';
 import ApartmentDetail from './Components/apartments/ApartmentDetail';
-import ProfilePage from './Components/profile/ProfilePage';
+import ProfilePage from './Components/profile/Profilepage';
 
 const APARTMENTS_PER_PAGE = 24;
 const RESERVATIONS_PER_PAGE = 9;
